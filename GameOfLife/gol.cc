@@ -13,7 +13,7 @@
 
 #include "Display.h"
 
-#define LOCAL_SIZE 4
+#define LOCAL_SIZE 32
 
 // show available platforms and devices
 void showPlatforms(){
@@ -71,10 +71,10 @@ int main(int argc, char** argv){
 	std::string deviceName;
 	devices[0].getInfo(CL_DEVICE_NAME, &deviceName);
 	std::cout << "Command queue created successfuly, "
-             << "Kernels will be executed on : " << deviceName << std::endl;
+             << "Kernel will be executed on : " << deviceName << std::endl;
 
 	// Read source file
-	std::ifstream sourceFile("gol_kernels.cl");
+	std::ifstream sourceFile("gol_kernel.cl");
 	std::string sourceCode(std::istreambuf_iterator<char>(sourceFile), (std::istreambuf_iterator<char>()));
 	cl::Program::Sources source(1, std::make_pair(sourceCode.c_str(), sourceCode.length() + 1));
 
@@ -86,10 +86,8 @@ int main(int argc, char** argv){
 		// Build program for these specific devices
 		program.build(devices);
 
-		// Construct kernels
+		// Construct kernel
 		cl::Kernel k_gol(program,"gol");                // Game Of Life kernel
-		cl::Kernel k_ghostCols(program,"ghostCols");    // Ghost on columns
-		cl::Kernel k_ghostRows(program,"ghostRows");    // Ghost on Rows
 
         // Init of memory
 		cl_int* grid = new cl_int[N * N];
@@ -111,15 +109,10 @@ int main(int argc, char** argv){
 		// Copy host memory into device memory
 		queue.enqueueWriteBuffer(d_grid, CL_TRUE, 0, (N * N) * sizeof(cl_int), grid);
 
-		// Set arguments of kernels
+		// Set arguments of kernel
 		k_gol.setArg(0, N);
 		k_gol.setArg(1, d_grid);
 		k_gol.setArg(2, d_newGrid);
-
-        k_ghostCols.setArg(0, N);
-        k_ghostCols.setArg(1, d_grid);
-        k_ghostRows.setArg(0, N);
-        k_ghostRows.setArg(1, d_grid);
 
 		// Execute the kernel
 		cl::NDRange local(LOCAL_SIZE);
@@ -130,8 +123,6 @@ int main(int argc, char** argv){
         d.show();
 
         for (int i = 0; i < 100; i++) {
-		    queue.enqueueNDRangeKernel(k_ghostRows, cl::NullRange, N * N, N * N);
-		    queue.enqueueNDRangeKernel(k_ghostCols, cl::NullRange, N * N, N * N);
 		    queue.enqueueNDRangeKernel(k_gol, cl::NullRange, N * N, N * N);
 
             // Check if we need to use grid or newGrid
@@ -139,17 +130,11 @@ int main(int argc, char** argv){
                 // Kernel gol
                 k_gol.setArg(1, d_grid);
                 k_gol.setArg(2, d_newGrid);
-                // Kernel ghosts
-                k_ghostCols.setArg(1, d_grid);
-                k_ghostRows.setArg(1, d_grid);
             }
             else {
                 // Kernel gol
                 k_gol.setArg(1, d_newGrid);
                 k_gol.setArg(2, d_grid);
-                // Kernel ghosts
-                k_ghostCols.setArg(1, d_grid);
-                k_ghostRows.setArg(1, d_grid);
             }
             // Display the array
             std::cout << std::endl;
