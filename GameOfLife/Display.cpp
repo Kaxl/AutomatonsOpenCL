@@ -11,8 +11,8 @@ Display::Display(unsigned int* data,
 Display::~Display() { cv::destroyWindow("Window"); }
 
 void Display::show() {
-	static float gradient;
-	static color col;
+	//static float gradient;
+	//static color col;
 	for (unsigned int y=0;y<sizeY_;y++ ) {
 		for (unsigned int x=0;x<sizeX_;x++) {
 			//gradient = (((float)data_[y*sizeX_+x])/((float)max_))*250.0;

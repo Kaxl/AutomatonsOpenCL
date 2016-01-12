@@ -1,32 +1,29 @@
-__kernel void ghostRows(const int N,
-                        __global *grid)
+// Kernels of Game Of Life
+// Ghosts kernel are use to keep the game going when reaching the end of the grid
+
+__kernel void ghostRows(const int N, __global int *grid)
 {
-    // We want id to range from 1 to N
-    int id = get_global_id(0) + 1;
+    int id = get_global_id(0);
+
+    if (id < N)
+    {
+        grid[(N + 2) * ( N + 1) + id] = grid[N + 2 + id];   // Copy first real row to bottom ghost row
+        grid[id] = grid[N + 2 * N + id];                    // Copy last real row to top ghost row
+    }
+}
+
+__kernel void ghostCols(const int N, __global int *grid)
+{
+    int id = get_global_id(0);
 
     if (id <= N)
     {
-        grid[(N+2)*(N+1)+id] = grid[(N+2)+id]; //Copy first real row to bottom ghost row
-        grid[id] = grid[(N+2)*N + id]; //Copy last real row to top ghost row
+        grid[id * N + 2 + N] = grid[id * N + 2]; // Copy first real column to right most ghost column
+        grid[id * N + 2] = grid[id * N + 2 + N]; // Copy last real column to left most ghost column
     }
 }
 
-__kernel void ghostCols(const int N,
-                        __global *grid)
-{
-    // We want id to range from 0 to N+1
-    int id = get_global_id(0);
-
-    if (id <= N+1)
-    {
-        grid[id*(N+2)+N+1] = grid[id*(N+2)+1]; //Copy first real column to right most ghost column
-        grid[id*(N+2)] = grid[id*(N+2) + N]; //Copy last real column to left most ghost column
-    }
-}
-
-__kernel void gol(const int N,
-                  __global int *grid,
-                  __global int *newGrid)
+__kernel void gol(const int N, __global int *grid, __global int *newGrid)
 {
     // Get global id 
     int id = get_global_id(0);

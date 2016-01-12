@@ -35,7 +35,7 @@ void showPlatforms(){
 }
 
 // Try to construct a context with the first platform of the requested type
-cl::Context getContext(cl_device_type requestedDeviceType, std::vector<cl::Platform>& platforms){
+cl::Context getContext(cl_device_type requestedDeviceType, std::vector<cl::Platform>& platforms) {
 	// Try to create a context of the requested platform type
 	for (unsigned int i = 0; i < platforms.size(); i++){
 		try {
@@ -48,6 +48,14 @@ cl::Context getContext(cl_device_type requestedDeviceType, std::vector<cl::Platf
 }
 
 int main(int argc, char** argv){
+    // Get args from user
+    if (argc != 2) {
+        printf("Usage : %s SizeOfGrid\n", argv[0]);
+        return 1;
+    }
+    cl_uint N = (cl_uint)atoi(argv[1]);
+    printf("Size of grid : %d\n", N);
+
 	showPlatforms();
 	std::vector<cl::Platform> platforms;
 	cl::Platform::get(&platforms);
@@ -83,15 +91,6 @@ int main(int argc, char** argv){
 		cl::Kernel k_ghostCols(program,"ghostCols");    // Ghost on columns
 		cl::Kernel k_ghostRows(program,"ghostRows");    // Ghost on Rows
 
-        // Get args from user
-        //if (argc != 2) {
-        //    printf("Usage : %s SizeOfGrid\n", argv[0]);
-        //    return 1;
-        //}
-        //cl_uint N = (cl_uint)argv[1];
-        cl_uint N = 16;
-        printf("Size of grid : %d", N);
-
         // Init of memory
 		cl_int* grid = new cl_int[N * N];
 		for (cl_uint i = 0; i < (N * N); i++) grid[i] = 0;
@@ -112,24 +111,27 @@ int main(int argc, char** argv){
 		// Copy host memory into device memory
 		queue.enqueueWriteBuffer(d_grid, CL_TRUE, 0, (N * N) * sizeof(cl_int), grid);
 
-		// Set arguments to kernel
+		// Set arguments of kernels
 		k_gol.setArg(0, N);
 		k_gol.setArg(1, d_grid);
 		k_gol.setArg(2, d_newGrid);
+
+        k_ghostCols.setArg(0, N);
+        k_ghostCols.setArg(1, d_grid);
+        k_ghostRows.setArg(0, N);
+        k_ghostRows.setArg(1, d_grid);
 
 		// Execute the kernel
 		cl::NDRange local(LOCAL_SIZE);
 		cl::NDRange global(LOCAL_SIZE);
 		std::cout << "Kernel execution" << std::endl;
-		//queue.enqueueNDRangeKernel(k_ghostRows,cl::NullRange,global,local);
-		//queue.enqueueNDRangeKernel(k_ghostCols,cl::NullRange,global,local);
 
-        Display d(grid, (unsigned int)N, (unsigned int)N, (unsigned int)N);
+        Display d(grid, N, N, N);
         d.show();
 
-        for (int i = 0; i < 10; i++) {
-		    //queue.enqueueNDRangeKernel(k_ghostRows, cl::NullRange, global, local);
-		    //queue.enqueueNDRangeKernel(k_ghostCols, cl::NullRange, global, local);
+        for (int i = 0; i < 100; i++) {
+		    queue.enqueueNDRangeKernel(k_ghostRows, cl::NullRange, N * N, N * N);
+		    queue.enqueueNDRangeKernel(k_ghostCols, cl::NullRange, N * N, N * N);
 		    queue.enqueueNDRangeKernel(k_gol, cl::NullRange, N * N, N * N);
 
             // Check if we need to use grid or newGrid
@@ -137,20 +139,26 @@ int main(int argc, char** argv){
                 // Kernel gol
                 k_gol.setArg(1, d_grid);
                 k_gol.setArg(2, d_newGrid);
+                // Kernel ghosts
+                k_ghostCols.setArg(1, d_grid);
+                k_ghostRows.setArg(1, d_grid);
             }
             else {
                 // Kernel gol
                 k_gol.setArg(1, d_newGrid);
                 k_gol.setArg(2, d_grid);
+                // Kernel ghosts
+                k_ghostCols.setArg(1, d_grid);
+                k_ghostRows.setArg(1, d_grid);
             }
             // Display the array
+            std::cout << std::endl;
             std::cout << "--- i=" << i << std::endl;
 		    queue.enqueueReadBuffer(d_grid, CL_TRUE, 0, (N * N) * sizeof(cl_int), grid);
             for (cl_uint i = 0; i < N * N; i++) {
                 std::cout << grid[i] << " ";
-                if (i % N == 0) {
-                    std::cout << " " << std::endl;
-                }
+                if (i % N == 0)
+                    std::cout << std::endl;
             }
 
             // Update display
