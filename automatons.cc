@@ -49,11 +49,16 @@ cl::Context getContext(cl_device_type requestedDeviceType, std::vector<cl::Platf
 
 int main(int argc, char** argv){
     // Get args from user
-    if (argc != 2) {
-        printf("Usage : %s SizeOfGrid\n", argv[0]);
+    if (argc != 3) {
+        std::cout << "Usage : " << argv[0] << " program SizeOfGrid" << std::endl;
+        std::cout << "Program : " << std::endl;
+        std::cout << "      1 : Game Of Life" << std::endl;
+        std::cout << "      2 : Soon" << std::endl;
+        std::cout << "      3 : Very very soon" << std::endl;
         return 1;
     }
-    cl_uint N = (cl_uint)atoi(argv[1]);
+    int algo = atoi(argv[1]);
+    cl_uint N = (cl_uint)atoi(argv[2]);
     printf("Size of grid : %d\n", N);
 
 	showPlatforms();
@@ -74,7 +79,21 @@ int main(int argc, char** argv){
              << "Kernel will be executed on : " << deviceName << std::endl;
 
 	// Read source file
-	std::ifstream sourceFile("gol_kernel.cl");
+    const char* kernelFile = "gameoflife_kernel.cl";
+    switch (algo) {
+        case 1:     // Game Of Life
+            kernelFile = "gameoflife_kernel.cl";
+            break;
+        case 2:
+            break;
+        case 3:
+            break;
+        default:
+            kernelFile = "gameoflife_kernel.cl";
+            break;
+    }
+
+	std::ifstream sourceFile(kernelFile);
 	std::string sourceCode(std::istreambuf_iterator<char>(sourceFile), (std::istreambuf_iterator<char>()));
 	cl::Program::Sources source(1, std::make_pair(sourceCode.c_str(), sourceCode.length() + 1));
 
@@ -86,11 +105,26 @@ int main(int argc, char** argv){
 		// Build program for these specific devices
 		program.build(devices);
 
+
+        // Set the kernel to use
+        const char* kernelProgram = "gameoflife";
+        switch (algo) {
+            case 1:     // Game Of Life
+                kernelFile = "gameoflife";
+                break;
+            case 2:
+                break;
+            case 3:
+                break;
+            default:
+                kernelFile = "gameoflife";
+                break;
+        }
 		// Construct kernel
-		cl::Kernel k_gol(program,"gol");                // Game Of Life kernel
+		cl::Kernel k_automaton(program, kernelProgram);
 
         // Init of memory
-		cl_int* grid = new cl_int[N * N];
+		cl_uint* grid = new cl_uint[N * N];
 		for (cl_uint i = 0; i < (N * N); i++) grid[i] = 0;
 
         // Init of game of life for test
@@ -110,9 +144,9 @@ int main(int argc, char** argv){
 		queue.enqueueWriteBuffer(d_grid, CL_TRUE, 0, (N * N) * sizeof(cl_int), grid);
 
 		// Set arguments of kernel
-		k_gol.setArg(0, N);
-		k_gol.setArg(1, d_grid);
-		k_gol.setArg(2, d_newGrid);
+		k_automaton.setArg(0, N);
+		k_automaton.setArg(1, d_grid);
+		k_automaton.setArg(2, d_newGrid);
 
 		// Execute the kernel
 		cl::NDRange local(LOCAL_SIZE);
@@ -123,18 +157,16 @@ int main(int argc, char** argv){
         d.show();
 
         for (int i = 0; i < 100; i++) {
-		    queue.enqueueNDRangeKernel(k_gol, cl::NullRange, N * N, N * N);
+		    queue.enqueueNDRangeKernel(k_automaton, cl::NullRange, N * N, N * N);
 
             // Check if we need to use grid or newGrid
             if (i % 2 == 1) {
-                // Kernel gol
-                k_gol.setArg(1, d_grid);
-                k_gol.setArg(2, d_newGrid);
+                k_automaton.setArg(1, d_grid);
+                k_automaton.setArg(2, d_newGrid);
             }
             else {
-                // Kernel gol
-                k_gol.setArg(1, d_newGrid);
-                k_gol.setArg(2, d_grid);
+                k_automaton.setArg(1, d_newGrid);
+                k_automaton.setArg(2, d_grid);
             }
             // Display the array
             std::cout << std::endl;
@@ -147,7 +179,7 @@ int main(int argc, char** argv){
             }
 
             // Update display
-            d.show();
+            //d.show();
         }
 
         // Freeze display
