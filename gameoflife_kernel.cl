@@ -43,6 +43,5 @@ __kernel void gameoflife(const int N, __global int *grid, __global int *newGrid)
             newGrid[id] = 1;
         else
             newGrid[id] = cell;
-
     }
 }

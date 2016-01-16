@@ -11,15 +11,33 @@ Display::Display(unsigned int* data,
 Display::~Display() { cv::destroyWindow("Window"); }
 
 void Display::show() {
-	//static float gradient;
-	//static color col;
 	for (unsigned int y=0;y<sizeY_;y++ ) {
 		for (unsigned int x=0;x<sizeX_;x++) {
-			//gradient = (((float)data_[y*sizeX_+x])/((float)max_))*250.0;
-			//groundColorMix(col,gradient,0.0,250.0);
-			img_.data[(x*3)+y*sizeX_*3]   = (char)(data_[y * sizeX_ + x] * 250.0);
-			img_.data[(x*3)+y*sizeX_*3+1] = (char)(data_[y * sizeX_ + x] * 250.0);
-			img_.data[(x*3)+y*sizeX_*3+2] = (char)(data_[y * sizeX_ + x] * 250.0);
+            if (data_[y * sizeX_ + x] == 0) {
+                img_.data[(x*3)+y*sizeX_*3]   = 0;
+                img_.data[(x*3)+y*sizeX_*3+1] = 0;
+                img_.data[(x*3)+y*sizeX_*3+2] = 0;
+            }
+            else if (data_[y * sizeX_ + x] == 1) {
+                img_.data[(x*3)+y*sizeX_*3]   = 255;
+                img_.data[(x*3)+y*sizeX_*3+1] = 255;
+                img_.data[(x*3)+y*sizeX_*3+2] = 255;
+            }
+            else if (data_[y * sizeX_ + x] == 2) {
+                img_.data[(x*3)+y*sizeX_*3]   = 0;   // Blue
+                img_.data[(x*3)+y*sizeX_*3+1] = 0;   // Green
+                img_.data[(x*3)+y*sizeX_*3+2] = 204; // Red
+            }
+            else if (data_[y * sizeX_ + x] == 3) {
+                img_.data[(x*3)+y*sizeX_*3]   = 0;   // Blue
+                img_.data[(x*3)+y*sizeX_*3+1] = 102; // Green
+                img_.data[(x*3)+y*sizeX_*3+2] = 0;   // Red
+            }
+            else {
+                img_.data[(x*3)+y*sizeX_*3]   = 102;
+                img_.data[(x*3)+y*sizeX_*3+1] = 0;
+                img_.data[(x*3)+y*sizeX_*3+2] = 0;
+            }
 		}
 	}
 	cv::imshow("Window",img_);

@@ -28,7 +28,7 @@
  * -----------
  *
  *  0 : No tree
- *  3 : Healthy tree
+ *  1 : Healthy tree
  *  2 : Burning tree
  *
  *  Rules
@@ -110,8 +110,10 @@ void initGridGameOfLife(cl_uint* grid, int N) {
 void initGridForestFire(cl_uint* grid, int N) {
     // Fill the game with healthy trees
     for (int i = 0; i < N * N; i++) {
-        grid[i] = 3;
+        grid[i] = 0;
     }
+
+    //grid[(N*N)/2 + N/2] = 2;
 }
 
 // show available platforms and devices
@@ -282,15 +284,19 @@ int main(int argc, char** argv){
         if (algo == 2) {
             // Growth probability
             k_automaton.setArg(3, p);
+            std::cout << "Probability of growth : " << p << std::endl;
             // Fire probability
             k_automaton.setArg(4, f);
+            std::cout << "Probability of fire : " << f << std::endl;
             // Random values for each id
             randoms = new cl_double[N * N];
-            srand(time(NULL));
+            //srand(time(NULL));
+            srand(10);
             // Fill the array with random value, one for each id
             for (cl_uint i = 0; i < (N * N); i++) randoms[i] = ((cl_double)rand() / (cl_double)RAND_MAX);
-            d_randoms = cl::Buffer(context, CL_MEM_READ_WRITE, N * N * sizeof(cl_double));
-            queue.enqueueWriteBuffer(d_randoms, CL_TRUE, 0, N * N * sizeof(cl_double), randoms);
+            for (cl_uint i = 0; i < (N * N); i++) std::cout << randoms[i] << " ";
+            d_randoms = cl::Buffer(context, CL_MEM_READ_WRITE, sizeof(cl_double));
+            queue.enqueueWriteBuffer(d_randoms, CL_TRUE, 0, sizeof(cl_double), randoms);
             k_automaton.setArg(5, d_randoms);
         }
 
@@ -300,7 +306,7 @@ int main(int argc, char** argv){
         Display d(grid, N, N, N);
         d.show();
 
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 100000; i++) {
             queue.enqueueNDRangeKernel(k_automaton,
                                        cl::NullRange,       // Start offset
                                        cl::NDRange(N * N),  // Nb of work-items
@@ -321,17 +327,16 @@ int main(int argc, char** argv){
             // Display the array
             std::cout << std::endl;
             std::cout << "--- i=" << i << std::endl;
-            //for (cl_uint i = 0; i < N * N; i++) {
-            //    std::cout << grid[i] << " ";
-            //    if (i % N == 0)
-            //        std::cout << std::endl;
-            //}
-
+            for (cl_uint i = 0; i < N * N; i++) {
+                std::cout << grid[i] << " ";
+                if (i % N == 0)
+                    std::cout << std::endl;
+            }
             // Generates new random values
-            for (cl_uint i = 0; i < (N * N); i++) randoms[i] = ((cl_double)rand() / (cl_double)RAND_MAX);
-            d_randoms = cl::Buffer(context, CL_MEM_READ_ONLY, N * N * sizeof(cl_double));
-            queue.enqueueWriteBuffer(d_randoms, CL_TRUE, 0, N * N * sizeof(cl_double), randoms);
-            k_automaton.setArg(5, d_randoms);
+            //for (cl_uint i = 0; i < (N * N); i++) randoms[i] = ((cl_double)rand() / (cl_double)RAND_MAX);
+            //d_randoms = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(cl_double));
+            //queue.enqueueWriteBuffer(d_randoms, CL_TRUE, 0, sizeof(cl_double), randoms);
+            //k_automaton.setArg(5, d_randoms);
 
             // Update display
             d.show();
