@@ -11,8 +11,8 @@ __kernel void gameoflife(const int N, __global int *grid, __global int *newGrid)
         // Get the number of neighbors for a cell
         nbNeighbors = grid[id + N] + grid[id - N]               // up and down
                      + grid[id + 1] + grid[id - 1]              // right and left
-                     + grid[id + N + 1] + grid[id - N + 1]      // diagonals
-                     + grid[id - N + 1] + grid[id + N + 1];
+                     + grid[id + N + 1] + grid[id + N - 1]      // diagonals
+                     + grid[id - N + 1] + grid[id - N - 1];
 
         // If cell is on a border, check the other side
         // First column

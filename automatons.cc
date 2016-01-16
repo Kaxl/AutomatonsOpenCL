@@ -15,6 +15,65 @@
 
 #define LOCAL_SIZE 32
 
+void initGridGameOfLife(cl_uint* grid, int N) {
+    // Gosper glider gun for game of life
+    grid[5 * N + 1] = 1;
+    grid[6 * N + 1] = 1;
+    grid[5 * N + 2] = 1;
+    grid[6 * N + 2] = 1;
+    grid[5 * N + 11] = 1;
+    grid[6 * N + 11] = 1;
+    grid[7 * N + 11] = 1;
+    grid[4 * N + 12] = 1;
+    grid[8 * N + 12] = 1;
+    grid[3 * N + 13] = 1;
+    grid[9 * N + 13] = 1;
+    grid[3 * N + 14] = 1;
+    grid[9 * N + 14] = 1;
+    grid[6 * N + 15] = 1;
+    grid[4 * N + 16] = 1;
+    grid[8 * N + 16] = 1;
+    grid[5 * N + 17] = 1;
+    grid[6 * N + 17] = 1;
+    grid[7 * N + 17] = 1;
+    grid[6 * N + 18] = 1;
+    grid[3 * N + 21] = 1;
+    grid[4 * N + 21] = 1;
+    grid[5 * N + 21] = 1;
+    grid[3 * N + 22] = 1;
+    grid[4 * N + 22] = 1;
+    grid[5 * N + 22] = 1;
+    grid[2 * N + 23] = 1;
+    grid[6 * N + 23] = 1;
+    grid[1 * N + 25] = 1;
+    grid[2 * N + 25] = 1;
+    grid[6 * N + 25] = 1;
+    grid[7 * N + 25] = 1;
+    grid[3 * N + 35] = 1;
+    grid[4 * N + 35] = 1;
+    grid[3 * N + 36] = 1;
+    grid[4 * N + 36] = 1;
+    grid[22 * N + 35] = 1;
+    grid[23 * N + 35] = 1;
+    grid[25 * N + 35] = 1;
+    grid[22 * N + 36] = 1;
+    grid[23 * N + 36] = 1;
+    grid[25 * N + 36] = 1;
+    grid[26 * N + 36] = 1;
+    grid[27 * N + 36] = 1;
+    grid[28 * N + 37] = 1;
+    grid[22 * N + 38] = 1;
+    grid[23 * N + 38] = 1;
+    grid[25 * N + 38] = 1;
+    grid[26 * N + 38] = 1;
+    grid[27 * N + 38] = 1;
+    grid[23 * N + 39] = 1;
+    grid[25 * N + 39] = 1;
+    grid[23 * N + 40] = 1;
+    grid[25 * N + 40] = 1;
+    grid[24 * N + 41] = 1;
+}
+
 // show available platforms and devices
 void showPlatforms(){
 	std::vector<cl::Platform> platforms;
@@ -127,14 +186,19 @@ int main(int argc, char** argv){
 		cl_uint* grid = new cl_uint[N * N];
 		for (cl_uint i = 0; i < (N * N); i++) grid[i] = 0;
 
-        // Init of game of life for test
-        grid[N * 3 + 5] = 1;
-        grid[N * 3 + 6] = 1;
-        grid[N * 3 + 9] = 1;
-        grid[N * 3 + 10] = 1;
-        grid[N * 3 + 11] = 1;
-        grid[N * 2 + 8] = 1;
-        grid[N + 6] = 1;
+        // Init of grid
+        switch (algo) {
+            case 1:     // Game Of Life
+                initGridGameOfLife(grid, N);
+                break;
+            case 2:
+                break;
+            case 3:
+                break;
+            default:
+                initGridGameOfLife(grid, N);
+                break;
+        }
 
 		// Device side memory allocation
 		cl::Buffer d_grid = cl::Buffer(context, CL_MEM_READ_WRITE, (N * N) * sizeof(cl_int));
@@ -149,15 +213,16 @@ int main(int argc, char** argv){
 		k_automaton.setArg(2, d_newGrid);
 
 		// Execute the kernel
-		cl::NDRange local(LOCAL_SIZE);
-		cl::NDRange global(LOCAL_SIZE);
 		std::cout << "Kernel execution" << std::endl;
 
         Display d(grid, N, N, N);
         d.show();
 
-        for (int i = 0; i < 100; i++) {
-		    queue.enqueueNDRangeKernel(k_automaton, cl::NullRange, N * N, N * N);
+        for (int i = 0; i < 100000; i++) {
+		    queue.enqueueNDRangeKernel(k_automaton,
+                                       cl::NullRange,       // Start offset
+                                       cl::NDRange(N * N),  // Nb of work-items
+                                       cl::NDRange(1));     // Nb of work-items by work-group
 
             // Check if we need to use grid or newGrid
             if (i % 2 == 1) {
@@ -168,18 +233,19 @@ int main(int argc, char** argv){
                 k_automaton.setArg(1, d_newGrid);
                 k_automaton.setArg(2, d_grid);
             }
+            // Get the values
+		    queue.enqueueReadBuffer(d_grid, CL_TRUE, 0, (N * N) * sizeof(cl_int), grid);
             // Display the array
             std::cout << std::endl;
             std::cout << "--- i=" << i << std::endl;
-		    queue.enqueueReadBuffer(d_grid, CL_TRUE, 0, (N * N) * sizeof(cl_int), grid);
-            for (cl_uint i = 0; i < N * N; i++) {
-                std::cout << grid[i] << " ";
-                if (i % N == 0)
-                    std::cout << std::endl;
-            }
+            //for (cl_uint i = 0; i < N * N; i++) {
+            //    std::cout << grid[i] << " ";
+            //    if (i % N == 0)
+            //        std::cout << std::endl;
+            //}
 
             // Update display
-            //d.show();
+            d.show();
         }
 
         // Freeze display
