@@ -345,11 +345,13 @@ int main(int argc, char** argv){
             //        std::cout << std::endl;
             //}
 
-            // Generates new random values
-            for (cl_uint i = 0; i < (N * N); i++) randoms[i] = ((cl_double)rand() / (cl_double)RAND_MAX);
-            d_randoms = cl::Buffer(context, CL_MEM_READ_ONLY, N * N * sizeof(cl_double));
-            queue.enqueueWriteBuffer(d_randoms, CL_TRUE, 0, N * N * sizeof(cl_double), randoms);
-            k_automaton.setArg(5, d_randoms);
+            // Generates new random values for Forest Fire
+            if (algo == 2) {
+                for (cl_uint i = 0; i < (N * N); i++) randoms[i] = ((cl_double)rand() / (cl_double)RAND_MAX);
+                d_randoms = cl::Buffer(context, CL_MEM_READ_ONLY, N * N * sizeof(cl_double));
+                queue.enqueueWriteBuffer(d_randoms, CL_TRUE, 0, N * N * sizeof(cl_double), randoms);
+                k_automaton.setArg(5, d_randoms);
+            }
 
             // Update display
             d.show();
