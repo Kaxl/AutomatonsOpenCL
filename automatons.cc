@@ -4,6 +4,7 @@
 #include <OpenCL/cl.hpp>
 #else
 #include <CL/cl.hpp>
+//#include <CL/opencl.h>
 #endif
 
 #include <cstdlib>
@@ -45,6 +46,13 @@
  *  We cannot use rand() function in the kernel so I've decided to pass an array
  *  containing N * N different random values.
  *  Maybe not the best solution, but it will do the trick.
+ *
+ *
+ * # Majorité
+ * -----------
+ *
+ * 0 : vote noir
+ * 1 : vote blanc
  *
  */
 
@@ -114,6 +122,13 @@ void initGridForestFire(cl_uint* grid, int N) {
     }
 }
 
+void initGridMajority(cl_uint* grid, int N) {
+    // Initialise la grille pour l automate cellulaire de la majorité
+    for (int i = 0; i < N * N; i++) {
+        grid[i] = rand()%2;
+    }
+}
+
 // show available platforms and devices
 void showPlatforms(){
     std::vector<cl::Platform> platforms;
@@ -153,7 +168,7 @@ int main(int argc, char** argv){
         std::cout << "Program : " << std::endl;
         std::cout << "      1 : Game Of Life" << std::endl;
         std::cout << "      2 : Forest Fire" << std::endl;
-        std::cout << "      3 : Very very soon" << std::endl;
+        std::cout << "      3 : Majority" << std::endl;
         return 1;
     }
     int algo = atoi(argv[1]);
@@ -201,7 +216,8 @@ int main(int argc, char** argv){
         case 2:     // Forest Fire
             kernelFile = "forestfire_kernel.cl";
             break;
-        case 3:
+        case 3:		// Majorité
+        	kernelFile = "majority_kernel.cl";
             break;
         default:
             kernelFile = "gameoflife_kernel.cl";
@@ -231,7 +247,8 @@ int main(int argc, char** argv){
             case 2:     // Forest Fire
                 kernelProgram = "forestfire";
                 break;
-            case 3:
+            case 3:		// Majorité
+            	kernelProgram = "majority";
                 break;
             default:
                 kernelFile = "gameoflife";
@@ -255,7 +272,8 @@ int main(int argc, char** argv){
             case 2:     // Forest Fire
                 initGridForestFire(grid, N);
                 break;
-            case 3:
+            case 3:		// Majorité
+            	initGridMajority(grid, N);
                 break;
             default:
                 initGridGameOfLife(grid, N);
