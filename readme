@@ -1,0 +1,9 @@
+
+Machine to use : 129.194.187.146
+
+$ ssh -Y 129.194.187.146
+
+Compilation
+-----------
+
+$ g++ -Wall automatons.cc Display.cpp -o automatons -I/usr/local/cuda/include -lOpenCL -lm -lopencv_core -lopencv_highgui
