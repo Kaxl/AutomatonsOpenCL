@@ -124,8 +124,9 @@ void initGridForestFire(cl_uint* grid, int N) {
 
 void initGridMajority(cl_uint* grid, int N) {
     // Initialise la grille pour l automate cellulaire de la majorité
+    srand(time(NULL));
     for (int i = 0; i < N * N; i++) {
-        grid[i] = rand()%2;
+        grid[i] = rand() % 2;
     }
 }
 
