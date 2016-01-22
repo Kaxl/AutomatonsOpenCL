@@ -7,3 +7,5 @@ Compilation
 -----------
 
 $ g++ -Wall automatons.cc Display.cpp -o automatons -I/usr/local/cuda/include -lOpenCL -lm -lopencv_core -lopencv_highgui
+
+Forest fire : ./automatons 2 1000 0.3 0.0006
